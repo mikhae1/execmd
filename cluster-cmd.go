@@ -59,7 +59,7 @@ func (c *ClusterSSHCmd) Run(command string) (cresult []ClusterRes, err error) {
 }
 
 // RunSeq Run command in series: run at first host, then run at second, then...
-func (c *ClusterSSHCmd) RunSeq(command string) (cresult []ClusterRes, err error) {
+func (c *ClusterSSHCmd) RunOneByOne(command string) (cresult []ClusterRes, err error) {
 	for i := range c.Hosts {
 		cres := ClusterRes{}
 		cres.res, cres.err = c.SSHCmds[i].Run(command)

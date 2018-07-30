@@ -33,6 +33,7 @@ type Cmd struct {
 	RecordStdout bool
 	RecordStderr bool
 	MuteStdout   bool
+	MuteStderr   bool
 	MuteCmd      bool
 }
 
@@ -46,9 +47,9 @@ type CmdPrefix struct {
 
 // CmdRes resulting struct
 type CmdRes struct {
-	stdout *bytes.Buffer
-	stderr *bytes.Buffer
-	cmd    *exec.Cmd
+	Stdout *bytes.Buffer
+	Stderr *bytes.Buffer
+	Cmd    *exec.Cmd
 }
 
 // NewCmd Cmd constructor
@@ -112,7 +113,13 @@ func (c *Cmd) Start(command string) (res CmdRes, err error) {
 	stdoutStream := NewPStream(stdoutLogFile, c.Prefix.stdout, c.RecordStdout)
 	c.cmd.Stdout = stdoutStream
 
-	stderrStream := NewPStream(log.New(os.Stderr, "", 0), c.Prefix.stderr, c.RecordStderr)
+	// FIXME: rewrite to use raw buffers only when mute == true
+	stderrLogFile := log.New(os.Stderr, "", 0)
+	if c.MuteStderr {
+		stderrLogFile = log.New(bytes.NewBuffer([]byte("")), "", 0)
+	}
+
+	stderrStream := NewPStream(stderrLogFile, c.Prefix.stderr, c.RecordStderr)
 	c.cmd.Stderr = stderrStream
 
 	c.cmd.Stdin = os.Stdin
@@ -123,8 +130,8 @@ func (c *Cmd) Start(command string) (res CmdRes, err error) {
 
 	err = c.cmd.Start()
 
-	res.cmd = c.cmd
-	res.stdout = stdoutStream.Get()
-	res.stderr = stderrStream.Get()
+	res.Cmd = c.cmd
+	res.Stdout = stdoutStream.Get()
+	res.Stderr = stderrStream.Get()
 	return
 }
