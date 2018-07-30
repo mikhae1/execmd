@@ -18,39 +18,39 @@ func TestNewClusterSSHCmd(t *testing.T) {
 	assert.NoError(err)
 	assert.EqualValues(len(res), len(sshHosts), "number of results not equal to hosts number")
 	for i := range res {
-		assert.EqualValues(res[i].res.stdout.String(), "Hello stdout world"+LineBreak)
-		assert.EqualValues(res[i].res.stderr.String(), "Hello stderr world"+LineBreak)
+		assert.EqualValues(res[i].res.Stdout.String(), "Hello stdout world\n")
+		assert.EqualValues(res[i].res.Stderr.String(), "Hello stderr world\n")
 	}
 
 	res, err = cluster.Run("give-me-error")
 	assert.Error(err)
 	assert.EqualValues(len(res), len(sshHosts), "number of results not equal to hosts number")
 	for i := range res {
-		assert.Contains(res[i].res.stderr.String(), "give-me-error")
+		assert.Contains(res[i].res.Stderr.String(), "give-me-error")
 	}
 
 	// serial
-	res, err = cluster.RunSeq("VAR=world; echo Hello stdout $VAR; echo Hello stderr $VAR >&2")
+	res, err = cluster.RunOneByOne("VAR=world; echo Hello stdout $VAR; echo Hello stderr $VAR >&2")
 	assert.NoError(err)
 	assert.EqualValues(len(res), len(sshHosts), "number of results not equal to hosts number")
 
 	for i := range res {
-		assert.EqualValues(res[i].res.stdout.String(), "Hello stdout world"+LineBreak)
-		assert.EqualValues(res[i].res.stderr.String(), "Hello stderr world"+LineBreak)
+		assert.EqualValues(res[i].res.Stdout.String(), "Hello stdout world\n")
+		assert.EqualValues(res[i].res.Stderr.String(), "Hello stderr world\n")
 	}
 
 	cluster.StopOnError = true
-	res, err = cluster.RunSeq("give-me-error")
+	res, err = cluster.RunOneByOne("give-me-error")
 	assert.Error(err)
 	assert.EqualValues(len(res), 1, "more than one result")
-	assert.Contains(res[0].res.stderr.String(), "give-me-error")
+	assert.Contains(res[0].res.Stderr.String(), "give-me-error")
 
 	h := []string{}
 	h = append(h, sshHosts[0], sshHosts[0])
 	twinCluster := NewClusterSSHCmd(h)
-	res, err = twinCluster.RunSeq("FILE=.dp_remove_me; [[ -f $FILE ]] || (touch $FILE; echo 1) && (echo 2; rm $FILE)")
+	res, err = twinCluster.RunOneByOne("FILE=.dp_remove_me; [[ -f $FILE ]] || (touch $FILE; echo 1) && (echo 2; rm $FILE)")
 	assert.NoError(err)
 	for i := range res {
-		assert.EqualValues(res[i].res.stdout.String(), "1"+LineBreak+"2"+LineBreak)
+		assert.EqualValues(res[i].res.Stdout.String(), "1\n2\n")
 	}
 }
