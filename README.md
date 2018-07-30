@@ -1,12 +1,12 @@
-# execmd
+# Exec-cmd
 
-Shell commands execution library for Golang
+Exec-cmd is a Golang library providing a simple interface to shell commands execution
 
 ## Key features
 
-* invoke system shell, so you could use variabes, pipes, redirections within your commands
+* execute command in system shell, so you could use variables, pipes, redirections
 * based on [exec](https://golang.org/pkg/os/exec/)
-* run local and remote shell commands
+* execute local and remote shell commands
 * remote commands execution is implemented by wrapping standart [OpenSSH](https://www.openssh.com/) SSH client, so all your ssh configuration (including ssh agent forwarding) works as expected
 * realtime `stdout` and `stderr` output with fancy colors and prefixes
 * run remote commands on several hosts (parallel and serial execution supported)
@@ -68,7 +68,7 @@ func main() {
   }
 
   // sequential run
-  res, err = cluster.RunOneByOne(`VAR=std; echo "Hello $VAR out"; echo Hello $VAR err >&2`)
+  res, err = cluster.RunOneByOne(`VAR=std; echo "Hello $VAR out"`)
 }
 ```
 
