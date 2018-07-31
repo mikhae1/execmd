@@ -11,7 +11,25 @@ Exec-cmd is a Golang library providing a simple interface to shell commands exec
 * realtime `stdout` and `stderr` output with fancy colors and prefixes
 * run remote commands on several hosts (parallel and serial execution supported)
 
-### Local command example
+## Installation
+
+Install the latest version of the library:
+
+* using `go get`:
+
+      go get -u "github.com/mink0/exec-cmd"
+
+* using [golang/dep](https://github.com/golang/dep) tool:
+
+      dep ensure -add "github.com/mink0/exec-cmd"
+
+Include `exec-cmd` in your application:
+
+```go
+import "github.com/mink0/exec-cmd"
+```
+
+## Local command example
 
 ```go
 package main
@@ -29,7 +47,7 @@ $ ps aux | grep go
 > mink0         1934   0.0  0.2 558459904  15744   ??  S    11:20AM   0:01.71 /Users/mink0/go/bin/gocode -s -sock unix -addr 127.0.0.1:37373
 ```
 
-### Remote command example
+## Remote command example
 
 ```go
 package main
@@ -51,7 +69,7 @@ $ /usr/bin/ssh 192.168.1.194 'VAR="$(hostname)"; echo "hello $VAR"'
 saved output: hello host-01.local
 ```
 
-### Cluster command example
+## Remote cluster command example
 
 ```go
 package main
@@ -61,20 +79,21 @@ import "github.com/mink0/exec-cmd"
 cluster := execmd.NewClusterSSHCmd([]string{"host-01", "host-02", "host-03"})
 
 func main() {
-  // run in parallel
+  // execute in parallel order
   res, err := cluster.Run(`VAR=std; echo "Hello $VAR out"; echo Hello $VAR err >&2`)
   if err == nil {
     fmt.Printf("saved output: %v", res)
   }
 
-  // sequential run
+  // execute in serial order
   res, err = cluster.RunOneByOne(`VAR=std; echo "Hello $VAR out"`)
 }
 ```
 
-* Parallel
+Parallel execution results:
 
 ```sh
+
 $ /usr/bin/ssh host-01 'VAR=std; echo "Hello $VAR out"; echo "Hello $VAR err" >&2'
 $ /usr/bin/ssh host-02 'VAR=std; echo "Hello $VAR out"; echo "Hello $VAR err" >&2'
 $ /usr/bin/ssh host-03 'VAR=std; echo "Hello $VAR out"; echo "Hello $VAR err" >&2'
@@ -84,9 +103,10 @@ host-03@err Hello std err
 host-03 Hello std out
 host-02 Hello std out
 host-02@err Hello std err
+
 ```
 
-* Serial
+Serial execution results:
 
 ```sh
 $ /usr/bin/ssh host-01 'VAR=std; echo "Hello $VAR out"; echo Hello $VAR err >&2'
