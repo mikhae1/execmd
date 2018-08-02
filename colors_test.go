@@ -9,7 +9,7 @@ import (
 func TestColor(t *testing.T) {
 	str := "i am green"
 
-	green := ColorOK(str)
+	green := colorOK(str)
 
 	assert.Contains(t, green, str)
 }

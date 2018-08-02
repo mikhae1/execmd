@@ -14,8 +14,8 @@ func TestNewSSHCmd(t *testing.T) {
 	srv := NewSSHCmd(sshHost)
 	res, err := srv.Run("VAR=world; echo Hello stdout $VAR; echo Hello stderr $VAR >&2")
 	assert.NoError(err)
-	assert.EqualValues(res.Stdout.String(), "Hello stdout world\n")
-	assert.EqualValues(res.Stderr.String(), "Hello stderr world\n")
+	assert.EqualValues("Hello stdout world\n", res.Stdout.String())
+	assert.EqualValues("Hello stderr world\n", res.Stderr.String())
 
 	res, err = srv.Run("i-am-not-exist")
 	assert.Error(err)
