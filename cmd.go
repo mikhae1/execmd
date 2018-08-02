@@ -60,17 +60,18 @@ func NewCmd() *Cmd {
 		Prefix: CmdPrefix{
 			cmd:    "$ ",
 			stdout: "> ",
-			stderr: ColorErr("@err "),
+			stderr: colorErr("@err "),
 		},
 	}
 }
 
+// Wait wrapper for exec.Wait
 func (c *Cmd) Wait() (err error) {
 	err = c.cmd.Wait()
 
 	// flush last line
-	c.cmd.Stderr.(*PStream).Close()
-	c.cmd.Stdout.(*PStream).Close()
+	c.cmd.Stderr.(*pStream).Close()
+	c.cmd.Stdout.(*pStream).Close()
 	return
 }
 
@@ -110,7 +111,7 @@ func (c *Cmd) Start(command string) (res CmdRes, err error) {
 		stdoutLogFile = log.New(bytes.NewBuffer([]byte("")), "", 0)
 	}
 
-	stdoutStream := NewPStream(stdoutLogFile, c.Prefix.stdout, c.RecordStdout)
+	stdoutStream := newPStream(stdoutLogFile, c.Prefix.stdout, c.RecordStdout)
 	c.cmd.Stdout = stdoutStream
 
 	// FIXME: rewrite to use raw buffers only when mute == true
@@ -119,7 +120,7 @@ func (c *Cmd) Start(command string) (res CmdRes, err error) {
 		stderrLogFile = log.New(bytes.NewBuffer([]byte("")), "", 0)
 	}
 
-	stderrStream := NewPStream(stderrLogFile, c.Prefix.stderr, c.RecordStderr)
+	stderrStream := newPStream(stderrLogFile, c.Prefix.stderr, c.RecordStderr)
 	c.cmd.Stderr = stderrStream
 
 	c.cmd.Stdin = os.Stdin

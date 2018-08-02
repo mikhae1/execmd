@@ -3,42 +3,42 @@ package execmd
 import (
 	"hash/fnv"
 
-	"github.com/fatih/color"
+	fcolor "github.com/fatih/color"
 )
 
-var defaultColors = []color.Attribute{
-	color.FgCyan,
-	color.FgYellow,
-	color.FgMagenta,
-	color.FgBlue,
+var defaultColors = []fcolor.Attribute{
+	fcolor.FgCyan,
+	fcolor.FgYellow,
+	fcolor.FgMagenta,
+	fcolor.FgBlue,
 
-	color.FgHiGreen,
-	color.FgHiYellow,
-	color.FgHiBlue,
-	color.FgHiMagenta,
-	color.FgHiCyan,
+	fcolor.FgHiGreen,
+	fcolor.FgHiYellow,
+	fcolor.FgHiBlue,
+	fcolor.FgHiMagenta,
+	fcolor.FgHiCyan,
 }
 
-func Color(str string) (coloredStr string) {
+func color(str string) (coloredStr string) {
 	hash := fnv.New32a()
 
 	hash.Write([]byte(str))
 
 	colorAtrr := defaultColors[hash.Sum32()%uint32(len(defaultColors))]
 
-	coloredStr = color.New(colorAtrr).SprintFunc()(str)
+	coloredStr = fcolor.New(colorAtrr).SprintFunc()(str)
 
 	return
 }
 
-func ColorErr(str string) string {
-	return color.New(color.FgRed).SprintFunc()(str)
+func colorErr(str string) string {
+	return fcolor.New(fcolor.FgRed).SprintFunc()(str)
 }
 
-func ColorOK(str string) string {
-	return color.New(color.FgGreen).SprintFunc()(str)
+func colorOK(str string) string {
+	return fcolor.New(fcolor.FgGreen).SprintFunc()(str)
 }
 
-func ColorStrong(str string) string {
-	return color.New(color.Bold).SprintFunc()(str)
+func colorStrong(str string) string {
+	return fcolor.New(fcolor.Bold).SprintFunc()(str)
 }

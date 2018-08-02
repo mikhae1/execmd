@@ -37,8 +37,8 @@ func NewSSHCmd(host string) *SSHCmd {
 	}
 
 	ssh.Cmd = NewCmd()
-	ssh.Cmd.Prefix.stdout = Color(host) + " "
-	ssh.Cmd.Prefix.stderr = Color(host) + ColorErr("@err ")
+	ssh.Cmd.Prefix.stdout = color(host) + " "
+	ssh.Cmd.Prefix.stderr = color(host) + colorErr("@err ")
 	ssh.Cmd.Prefix.cmd = "$ "
 	return ssh
 }

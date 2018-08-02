@@ -1,5 +1,7 @@
-// based on: https://github.com/kvz/logstreamer
 package execmd
+
+// main idea taken from logstreamer
+// see: https://github.com/kvz/logstreamer
 
 import (
 	"bytes"
@@ -8,7 +10,7 @@ import (
 	"strings"
 )
 
-type PStream struct {
+type pStream struct {
 	Logger   *log.Logger
 	buf      *bytes.Buffer
 	prefix   string
@@ -16,8 +18,8 @@ type PStream struct {
 	data     *bytes.Buffer
 }
 
-func NewPStream(logger *log.Logger, prefix string, saveData bool) *PStream {
-	streamer := &PStream{
+func newPStream(logger *log.Logger, prefix string, saveData bool) *pStream {
+	streamer := &pStream{
 		Logger:   logger,
 		buf:      bytes.NewBuffer([]byte("")),
 		prefix:   prefix,
@@ -28,7 +30,7 @@ func NewPStream(logger *log.Logger, prefix string, saveData bool) *PStream {
 	return streamer
 }
 
-func (p *PStream) Write(b []byte) (n int, err error) {
+func (p *pStream) Write(b []byte) (n int, err error) {
 	if n, err = p.buf.Write(b); err != nil {
 		return
 	}
@@ -37,7 +39,7 @@ func (p *PStream) Write(b []byte) (n int, err error) {
 	return
 }
 
-func (p *PStream) Close() error {
+func (p *pStream) Close() error {
 	if err := p.Flush(); err != nil {
 		return err
 	}
@@ -46,7 +48,7 @@ func (p *PStream) Close() error {
 	return nil
 }
 
-func (p *PStream) Flush() error {
+func (p *pStream) Flush() error {
 	var b []byte
 
 	if _, err := p.buf.Read(b); err != nil {
@@ -57,7 +59,7 @@ func (p *PStream) Flush() error {
 	return nil
 }
 
-func (p *PStream) OutputLines() error {
+func (p *pStream) OutputLines() error {
 	for {
 		line, err := p.buf.ReadString('\n')
 
@@ -86,15 +88,15 @@ func (p *PStream) OutputLines() error {
 	return nil
 }
 
-func (p *PStream) FlushData() {
+func (p *pStream) FlushData() {
 	p.data.Reset()
 }
 
-func (p *PStream) Get() *bytes.Buffer {
+func (p *pStream) Get() *bytes.Buffer {
 	return p.data
 }
 
-func (p *PStream) out(str string) {
+func (p *pStream) out(str string) {
 	if len(str) < 1 {
 		return
 	}

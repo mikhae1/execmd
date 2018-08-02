@@ -58,7 +58,7 @@ func (c *ClusterSSHCmd) Run(command string) (cresult []ClusterRes, err error) {
 	return
 }
 
-// RunSeq Run command in series: run at first host, then run at second, then...
+// RunOneByOne run commands in series: run at first host, then run at second, then...
 func (c *ClusterSSHCmd) RunOneByOne(command string) (cresult []ClusterRes, err error) {
 	for i := range c.Hosts {
 		cres := ClusterRes{}
@@ -74,7 +74,7 @@ func (c *ClusterSSHCmd) RunOneByOne(command string) (cresult []ClusterRes, err e
 	return
 }
 
-// Start starts command in parallel
+// Start run commands in parallel
 func (c *ClusterSSHCmd) Start(command string) (cresult []ClusterRes, err error) {
 	// reset started on each start
 	c.Started = []ClusterRes{}
