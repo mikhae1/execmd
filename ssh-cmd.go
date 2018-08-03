@@ -16,10 +16,11 @@ import (
 	"github.com/pkg/errors"
 )
 
+// SSHCmd is a wrapper on Cmd
 type SSHCmd struct {
 	Cmd *Cmd
 
-	SshBinPath  string
+	SSHBinPath  string
 	Host        string
 	User        string
 	Interactive bool
@@ -29,22 +30,51 @@ type SSHCmd struct {
 }
 
 // Path to ssh binary
+// Could be overriden by setting SSH_BIN_PATH env variable
 var sshBinList = []string{os.Getenv("SSH_BIN_PATH"), "ssh"}
 
+// NewSSHCmd initialize SSHCmd with defaults
 func NewSSHCmd(host string) *SSHCmd {
 	ssh := &SSHCmd{
 		Host: host,
 	}
 
 	ssh.Cmd = NewCmd()
-	ssh.Cmd.Prefix.stdout = color(host) + " "
-	ssh.Cmd.Prefix.stderr = color(host) + colorErr("@err ")
-	ssh.Cmd.Prefix.cmd = "$ "
+	ssh.Cmd.PrefixStdout = color(host) + " "
+	ssh.Cmd.PrefixStderr = color(host) + colorErr("@err ")
+	ssh.Cmd.PrefixCmd = "$ "
 	return ssh
 }
 
-func (s *SSHCmd) warpInSsh(command string) (sshArgs []string) {
-	sshArgs = append(sshArgs, s.SshBinPath)
+// Wait wraps Cmd.Wait()
+func (s *SSHCmd) Wait() error {
+	return s.Cmd.Wait()
+}
+
+// Run wraps Cmd.Run()
+func (s *SSHCmd) Run(command string) (res CmdRes, err error) {
+	return s.Cmd.Run(command)
+}
+
+// Start wraps Cmd.Start() with ssh invocation
+func (s *SSHCmd) Start(command string) (res CmdRes, err error) {
+	if s.SSHBinPath == "" {
+		if s.SSHBinPath, err = findPath(sshBinList); err != nil {
+			err = errors.Wrapf(err, "can't find ssh binary: %v", shellPathList)
+			return
+		}
+	}
+
+	sshArgs := s.warpInSSH(command)
+
+	res, err = s.Cmd.Start(strings.Join(sshArgs, " "))
+
+	return
+}
+
+// transform `command` into ssh-compatible argument string
+func (s *SSHCmd) warpInSSH(command string) (sshArgs []string) {
+	sshArgs = append(sshArgs, s.SSHBinPath)
 
 	hostWithUser := s.Host
 	if s.User != "" {
@@ -68,35 +98,6 @@ func (s *SSHCmd) warpInSsh(command string) (sshArgs []string) {
 
 	// escape single quotes for shell encapsulation
 	sshArgs = append(sshArgs, "'"+strings.Replace(command, "'", "'\\''", -1)+"'")
-
-	return
-}
-
-func (s *SSHCmd) Wait() error {
-	return s.Cmd.Wait()
-}
-
-func (s *SSHCmd) Run(command string) (res CmdRes, err error) {
-	if res, err = s.Start(command); err != nil {
-		return
-	}
-
-	err = s.Wait()
-
-	return
-}
-
-func (s *SSHCmd) Start(command string) (res CmdRes, err error) {
-	if s.SshBinPath == "" {
-		if s.SshBinPath, err = FindPath(sshBinList); err != nil {
-			err = errors.Wrapf(err, "can't find ssh binary: %v", shellPathList)
-			return
-		}
-	}
-
-	sshArgs := s.warpInSsh(command)
-
-	res, err = s.Cmd.Start(strings.Join(sshArgs, " "))
 
 	return
 }

@@ -23,58 +23,51 @@ import (
 // List of system shell binaries
 var shellPathList = []string{os.Getenv("SHELL"), "bash", "sh"}
 
-// Cmd wrapper struct around exec.Cmd
+// Cmd is wrapper struct around exec.Cmd
 // Stream buffers will be saved with Record[Stdout|Stderr] == true
-// Mute option turns off output
+// Mute options turns off console output
 type Cmd struct {
-	cmd          *exec.Cmd
 	ShellPath    string
-	Prefix       CmdPrefix
 	RecordStdout bool
 	RecordStderr bool
 	MuteStdout   bool
 	MuteStderr   bool
 	MuteCmd      bool
-}
+	PrefixStdout string // stdout prining prefix
+	PrefixStderr string // stderr priniting prefix
+	PrefixCmd    string // command printing prefix
 
-// CmdPrefix prefixes for stdout and stderr output.
-// Cmd prefix is for command output
-type CmdPrefix struct {
-	cmd    string
-	stdout string
-	stderr string
+	Cmd *exec.Cmd // os.Exec instance
 }
 
 // CmdRes resulting struct
 type CmdRes struct {
 	Stdout *bytes.Buffer
 	Stderr *bytes.Buffer
-	Cmd    *exec.Cmd
 }
 
-// NewCmd Cmd constructor
+// NewCmd initialize Cmd with defaults
 func NewCmd() *Cmd {
 	return &Cmd{
 		RecordStdout: true,
 		RecordStderr: true,
-		Prefix: CmdPrefix{
-			cmd:    "$ ",
-			stdout: "> ",
-			stderr: colorErr("@err "),
-		},
+		PrefixCmd:    "$ ",
+		PrefixStdout: "> ",
+		PrefixStderr: colorErr("@err "),
 	}
 }
 
-// Wait wrapper for exec.Wait
+// Wait is a exec.Wait wrapper with buffer flushes
 func (c *Cmd) Wait() (err error) {
-	err = c.cmd.Wait()
+	err = c.Cmd.Wait()
 
 	// flush last line
-	c.cmd.Stderr.(*pStream).Close()
-	c.cmd.Stdout.(*pStream).Close()
+	c.Cmd.Stderr.(*pStream).Close()
+	c.Cmd.Stdout.(*pStream).Close()
 	return
 }
 
+// Run is exec.Run() wrapper: run command and blocking wait for result
 func (c *Cmd) Run(command string) (res CmdRes, err error) {
 	if res, err = c.Start(command); err != nil {
 		return
@@ -84,26 +77,16 @@ func (c *Cmd) Run(command string) (res CmdRes, err error) {
 	return
 }
 
-func FindPath(paths []string) (path string, err error) {
-	for _, p := range paths {
-		path, err = exec.LookPath(p)
-		if err == nil {
-			break
-		}
-	}
-
-	return
-}
-
+// Start is exec.Start() wrapper with system shell and buffers initialization
 func (c *Cmd) Start(command string) (res CmdRes, err error) {
 	if c.ShellPath == "" {
-		if c.ShellPath, err = FindPath(shellPathList); err != nil {
+		if c.ShellPath, err = findPath(shellPathList); err != nil {
 			err = errors.Wrapf(err, "can't find shell binary: %v", shellPathList)
 			return
 		}
 	}
 
-	c.cmd = exec.Command(c.ShellPath, "-c", command)
+	c.Cmd = exec.Command(c.ShellPath, "-c", command)
 
 	// FIXME: rewrite to use raw buffers only when mute == true
 	stdoutLogFile := log.New(os.Stdout, "", 0)
@@ -111,28 +94,37 @@ func (c *Cmd) Start(command string) (res CmdRes, err error) {
 		stdoutLogFile = log.New(bytes.NewBuffer([]byte("")), "", 0)
 	}
 
-	stdoutStream := newPStream(stdoutLogFile, c.Prefix.stdout, c.RecordStdout)
-	c.cmd.Stdout = stdoutStream
-
-	// FIXME: rewrite to use raw buffers only when mute == true
 	stderrLogFile := log.New(os.Stderr, "", 0)
 	if c.MuteStderr {
 		stderrLogFile = log.New(bytes.NewBuffer([]byte("")), "", 0)
 	}
 
-	stderrStream := newPStream(stderrLogFile, c.Prefix.stderr, c.RecordStderr)
-	c.cmd.Stderr = stderrStream
+	stdoutStream := newPStream(stdoutLogFile, c.PrefixStdout, c.RecordStdout)
+	c.Cmd.Stdout = stdoutStream
 
-	c.cmd.Stdin = os.Stdin
+	stderrStream := newPStream(stderrLogFile, c.PrefixStderr, c.RecordStderr)
+	c.Cmd.Stderr = stderrStream
+
+	c.Cmd.Stdin = os.Stdin
 
 	if !c.MuteCmd {
-		fmt.Printf("%s%s\n", c.Prefix.cmd, command)
+		fmt.Printf("%s%s\n", c.PrefixCmd, command)
 	}
 
-	err = c.cmd.Start()
+	err = c.Cmd.Start()
 
-	res.Cmd = c.cmd
 	res.Stdout = stdoutStream.Get()
 	res.Stderr = stderrStream.Get()
+	return
+}
+
+func findPath(paths []string) (path string, err error) {
+	for _, p := range paths {
+		path, err = exec.LookPath(p)
+		if err == nil {
+			break
+		}
+	}
+
 	return
 }
