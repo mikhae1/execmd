@@ -53,4 +53,15 @@ func TestNewClusterSSHCmd(t *testing.T) {
 	for i := range res {
 		assert.EqualValues("1\n2\n", res[i].Res.Stdout.String())
 	}
+
+	// check results are saved between executions
+	res1, err1 := cluster.Run("echo res1")
+	assert.NoError(err1)
+	res2, err2 := cluster.Run("echo res2")
+	assert.NoError(err2)
+	assert.EqualValues(len(sshHosts), len(res), "number of results not equal to hosts number")
+	for i := range res1 {
+		assert.EqualValues("res1\n", res1[i].Res.Stdout.String())
+		assert.EqualValues("res2\n", res2[i].Res.Stdout.String())
+	}
 }

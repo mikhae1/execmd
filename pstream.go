@@ -19,15 +19,13 @@ type pStream struct {
 }
 
 func newPStream(logger *log.Logger, prefix string, saveData bool) *pStream {
-	streamer := &pStream{
+	return &pStream{
 		Logger:   logger,
 		buf:      bytes.NewBuffer([]byte("")),
 		prefix:   prefix,
 		saveData: saveData,
 		data:     bytes.NewBuffer([]byte("")),
 	}
-
-	return streamer
 }
 
 func (p *pStream) Write(b []byte) (n int, err error) {

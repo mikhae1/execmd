@@ -33,17 +33,16 @@ type SSHCmd struct {
 // Could be overriden by setting SSH_BIN_PATH env variable
 var sshBinList = []string{os.Getenv("SSH_BIN_PATH"), "ssh"}
 
-// NewSSHCmd initialize SSHCmd with defaults
+// NewSSHCmd initializes SSHCmd with defaults
 func NewSSHCmd(host string) *SSHCmd {
-	ssh := &SSHCmd{
+	ssh := SSHCmd{
 		Host: host,
 	}
 
 	ssh.Cmd = NewCmd()
 	ssh.Cmd.PrefixStdout = color(host) + " "
 	ssh.Cmd.PrefixStderr = color(host) + colorErr("@err ")
-	ssh.Cmd.PrefixCmd = "$ "
-	return ssh
+	return &ssh
 }
 
 // Wait wraps Cmd.Wait()

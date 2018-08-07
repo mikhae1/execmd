@@ -18,16 +18,15 @@ type ClusterRes struct {
 	Err  error
 }
 
-// NewClusterSSHCmd init ClusterSSHCmd with defaults
-func NewClusterSSHCmd(hosts []string) (c ClusterSSHCmd) {
-	c = ClusterSSHCmd{}
+// NewClusterSSHCmd inits ClusterSSHCmd with defaults
+func NewClusterSSHCmd(hosts []string) *ClusterSSHCmd {
+	c := ClusterSSHCmd{}
 	c.StopOnError = false
 	c.Hosts = append([]string(nil), hosts...)
 	for _, h := range hosts {
 		c.SSHCmds = append(c.SSHCmds, NewSSHCmd(h))
 	}
-
-	return
+	return &c
 }
 
 // Wait wraps SSHCmd.Wait for array of hosts into c.StartedCmds struct
@@ -62,45 +61,43 @@ func (c *ClusterSSHCmd) Run(command string) (results []ClusterRes, err error) {
 
 	err = c.Wait()
 
-	// FIXME
-	// c.StartedCmds results with host filled
-	// protect the results from changes from ClusterSSHCmd
-	results = append([]ClusterRes(nil), c.StartedCmds...)
+	results = c.StartedCmds
+
 	return
 }
 
 // RunOneByOne runs command in series: run at first host, then run at second, then...
 func (c *ClusterSSHCmd) RunOneByOne(command string) (results []ClusterRes, err error) {
-	return c.startAndRun(command, false)
+	return c.start(command, false)
 }
 
 // Start runs command in parallel
 func (c *ClusterSSHCmd) Start(command string) (results []ClusterRes, err error) {
-	return c.startAndRun(command, true)
+	return c.start(command, true)
 }
 
-// Loop through hosts and
-// .Start() or .Run() ssh command depending on `start` flag
-func (c *ClusterSSHCmd) startAndRun(command string, start bool) (results []ClusterRes, err error) {
+// Loop through hosts and start
+// .Start() or .Run() ssh command depending on `parallel` flag
+func (c *ClusterSSHCmd) start(command string, parallel bool) ([]ClusterRes, error) {
 	// reset started on each new start
 	c.StartedCmds = []ClusterRes{}
 	for i, host := range c.Hosts {
 		cres := ClusterRes{}
 		cres.Host = host
-		if start {
-			cres.Res, cres.Err = c.SSHCmds[i].Start(command)
-		} else {
-			cres.Res, cres.Err = c.SSHCmds[i].Run(command)
+
+		exec := c.SSHCmds[i].Start
+		if !parallel {
+			exec = c.SSHCmds[i].Run
 		}
-		results = append(results, cres)
+
+		cres.Res, cres.Err = exec(command)
 
 		// save results
 		c.StartedCmds = append(c.StartedCmds, cres)
 		if c.StopOnError && cres.Err != nil {
-			err = cres.Err
-			return
+			return c.StartedCmds, cres.Err
 		}
 	}
 
-	return
+	return c.StartedCmds, nil
 }

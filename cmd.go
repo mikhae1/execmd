@@ -6,8 +6,6 @@
 	Copyright(c) 2018 mink0
 */
 
-// TODO: add exit code capture
-
 package execmd
 
 import (
@@ -46,13 +44,13 @@ type CmdRes struct {
 	Stderr *bytes.Buffer
 }
 
-// NewCmd initialize Cmd with defaults
+// NewCmd initializes Cmd with defaults
 func NewCmd() *Cmd {
 	return &Cmd{
 		RecordStdout: true,
 		RecordStderr: true,
 		PrefixCmd:    "$ ",
-		PrefixStdout: "> ",
+		PrefixStdout: colorOK("> "),
 		PrefixStderr: colorErr("@err "),
 	}
 }
@@ -67,7 +65,7 @@ func (c *Cmd) Wait() (err error) {
 	return
 }
 
-// Run is exec.Run() wrapper: run command and blocking wait for result
+// Run is exec.Run() wrapper: runs command and blocking wait for result
 func (c *Cmd) Run(command string) (res CmdRes, err error) {
 	if res, err = c.Start(command); err != nil {
 		return
@@ -77,7 +75,7 @@ func (c *Cmd) Run(command string) (res CmdRes, err error) {
 	return
 }
 
-// Start is exec.Start() wrapper with system shell and buffers initialization
+// Start is exec.Start() wrapper with system shell and output buffers initialization
 func (c *Cmd) Start(command string) (res CmdRes, err error) {
 	if c.ShellPath == "" {
 		if c.ShellPath, err = findPath(shellPathList); err != nil {
