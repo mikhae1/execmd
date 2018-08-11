@@ -20,17 +20,17 @@ import (
 type SSHCmd struct {
 	Cmd *Cmd
 
+	Interactive bool
 	SSHBinPath  string
 	Host        string
 	User        string
-	Interactive bool
 	Port        string
 	Key         string
 	Cwd         string
 }
 
 // Path to ssh binary
-// Could be overriden by setting SSH_BIN_PATH env variable
+// Could be overridden by setting SSH_BIN_PATH env variable
 var sshBinList = []string{os.Getenv("SSH_BIN_PATH"), "ssh"}
 
 // NewSSHCmd initializes SSHCmd with defaults

@@ -31,9 +31,9 @@ type Cmd struct {
 	MuteStdout   bool
 	MuteStderr   bool
 	MuteCmd      bool
-	PrefixStdout string // stdout prining prefix
-	PrefixStderr string // stderr priniting prefix
-	PrefixCmd    string // command printing prefix
+	PrefixStdout string // printing prefixes
+	PrefixStderr string //
+	PrefixCmd    string //
 
 	Cmd *exec.Cmd // os.Exec instance
 }
@@ -106,7 +106,7 @@ func (c *Cmd) Start(command string) (res CmdRes, err error) {
 	c.Cmd.Stdin = os.Stdin
 
 	if !c.MuteCmd {
-		fmt.Printf("%s%s\n", c.PrefixCmd, command)
+		fmt.Printf("%s%s\n", c.PrefixCmd, colorStrong(command))
 	}
 
 	err = c.Cmd.Start()

@@ -2,14 +2,14 @@ package execmd
 
 // ClusterSSHCmd is a wrapper on SSHCmd
 type ClusterSSHCmd struct {
-	StopOnError bool
-	Hosts       []string
-	SSHCmds     []*SSHCmd
+	SSHCmds []*SSHCmd
 
+	Hosts       []string
 	StartedCmds []ClusterRes
+	StopOnError bool
 }
 
-// ClusterRes contains resultss of command execution:
+// ClusterRes contains results of command execution:
 // res - stdout, stderr
 // err - error
 type ClusterRes struct {
@@ -53,7 +53,7 @@ func (c *ClusterSSHCmd) Wait() error {
 	return lastError
 }
 
-// Run executes command in parallel: all commands starts running simultaniosly at the hosts
+// Run executes command in parallel: all commands starts running simultaneously at the hosts
 func (c *ClusterSSHCmd) Run(command string) (results []ClusterRes, err error) {
 	if results, err = c.Start(command); err != nil {
 		return
