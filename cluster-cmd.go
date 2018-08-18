@@ -1,5 +1,7 @@
 package execmd
 
+import "github.com/pkg/errors"
+
 // ClusterSSHCmd is a wrapper on SSHCmd
 type ClusterSSHCmd struct {
 	SSHCmds []*SSHCmd
@@ -79,6 +81,10 @@ func (c *ClusterSSHCmd) Start(command string) (results []ClusterRes, err error) 
 // Loop through hosts and start
 // .Start() or .Run() ssh command depending on `parallel` flag
 func (c *ClusterSSHCmd) start(command string, parallel bool) ([]ClusterRes, error) {
+	if len(c.Hosts) == 0 {
+		return nil, errors.New("no hosts to run cluster command")
+	}
+
 	// reset started on each new start
 	c.StartedCmds = []ClusterRes{}
 	for i, host := range c.Hosts {

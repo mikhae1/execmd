@@ -35,9 +35,7 @@ var sshBinList = []string{os.Getenv("SSH_BIN_PATH"), "ssh"}
 
 // NewSSHCmd initializes SSHCmd with defaults
 func NewSSHCmd(host string) *SSHCmd {
-	ssh := SSHCmd{
-		Host: host,
-	}
+	ssh := SSHCmd{Host: host}
 
 	ssh.Cmd = NewCmd()
 	ssh.Cmd.PrefixStdout = color(host) + " "
@@ -57,6 +55,11 @@ func (s *SSHCmd) Run(command string) (res CmdRes, err error) {
 
 // Start wraps Cmd.Start() with ssh invocation
 func (s *SSHCmd) Start(command string) (res CmdRes, err error) {
+	if s.Host == "" {
+		err = errors.New("no host to run ssh command")
+		return
+	}
+
 	if s.SSHBinPath == "" {
 		if s.SSHBinPath, err = findPath(sshBinList); err != nil {
 			err = errors.Wrapf(err, "can't find ssh binary: %v", shellPathList)
