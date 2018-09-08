@@ -38,9 +38,6 @@ func (c *ClusterSSHCmd) start(command string, parallel bool) ([]ClusterRes, erro
 
 	results := make([]ClusterRes, len(c.Cmds))
 	for i, cmd := range c.Cmds {
-		// reset previous errors
-		// cmd.Err = nil
-
 		results[i].Host = cmd.Host
 
 		// no need to implement interfaces here, we always have only: .Start() and .Run() methods
@@ -51,8 +48,6 @@ func (c *ClusterSSHCmd) start(command string, parallel bool) ([]ClusterRes, erro
 
 		results[i].Res, results[i].Err = exec(command)
 
-		// save errors
-		//cmd.Err = results[i].Err
 		if c.StopOnError && results[i].Err != nil {
 			return results[:i+1], results[i].Err
 		}
@@ -63,21 +58,16 @@ func (c *ClusterSSHCmd) start(command string, parallel bool) ([]ClusterRes, erro
 
 // Wait calls SSHCmd.Wait for the list of Cmds []ClusterCmd
 // you should access `.Cmds` to see exact where error occurs
-func (c *ClusterSSHCmd) Wait() error {
-	var lastError error
+func (c *ClusterSSHCmd) Wait() (err error) {
 	for _, cmd := range c.Cmds {
-		// skip commands which emit error on c.start() method
-		// if cmd.Err != nil {
-		// 	continue
-		// }
 
-		lastError = cmd.SSHCmd.Wait()
-		if c.StopOnError && lastError != nil {
-			return lastError
+		err = cmd.SSHCmd.Wait()
+		if c.StopOnError && err != nil {
+			return
 		}
 	}
 
-	return lastError
+	return
 }
 
 // Run executes command in parallel and waits for the results. Command starts simultaneously at each of the hosts.
