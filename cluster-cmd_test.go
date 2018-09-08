@@ -14,35 +14,35 @@ func TestNewClusterSSHCmd(t *testing.T) {
 	cluster := NewClusterSSHCmd(sshHosts)
 
 	// parallel
-	res, err := cluster.Run("VAR=world; echo Hello stdout $VAR; echo Hello stderr $VAR >&2")
+	res, err := cluster.Run("VAR=world; echo Parallel stdout $VAR; echo Parallel stderr $VAR >&2")
 	assert.NoError(err)
-	assert.EqualValues(len(sshHosts), len(res), "number of results not equal to hosts number")
+	assert.EqualValues(len(sshHosts), len(res), "Run: number of results not equals to hosts number")
 	for i := range res {
-		assert.EqualValues("Hello stdout world\n", res[i].Res.Stdout.String())
-		assert.EqualValues("Hello stderr world\n", res[i].Res.Stderr.String())
+		assert.EqualValues("Parallel stdout world\n", res[i].Res.Stdout.String())
+		assert.EqualValues("Parallel stderr world\n", res[i].Res.Stderr.String())
 	}
 
 	res, err = cluster.Run("give-me-error")
 	assert.Error(err)
-	assert.EqualValues(len(sshHosts), len(res), "number of results not equal to hosts number")
+	assert.EqualValues(len(sshHosts), len(res), "Run with error: number of results not equals to hosts number")
 	for i := range res {
 		assert.Contains(res[i].Res.Stderr.String(), "give-me-error")
 	}
 
 	// serial
-	res, err = cluster.RunOneByOne("VAR=world; echo Hello stdout $VAR; echo Hello stderr $VAR >&2")
+	res, err = cluster.RunOneByOne("VAR=world; echo Serial stdout $VAR; echo Serial stderr $VAR >&2")
 	assert.NoError(err)
-	assert.EqualValues(len(sshHosts), len(res), "number of results not equal to hosts number")
+	assert.EqualValues(len(sshHosts), len(res), "RunOneByOne: number of results not equals to hosts number")
 
 	for i := range res {
-		assert.EqualValues("Hello stdout world\n", res[i].Res.Stdout.String())
-		assert.EqualValues("Hello stderr world\n", res[i].Res.Stderr.String())
+		assert.EqualValues("Serial stdout world\n", res[i].Res.Stdout.String())
+		assert.EqualValues("Serial stderr world\n", res[i].Res.Stderr.String())
 	}
 
 	cluster.StopOnError = true
 	res, err = cluster.RunOneByOne("give-me-error")
 	assert.Error(err)
-	assert.EqualValues(1, len(res), "more than one result")
+	assert.EqualValues(1, len(res), "RunOneByOne with stop on error: more than one result returned")
 	assert.Contains(res[0].Res.Stderr.String(), "give-me-error")
 
 	h := []string{}
@@ -59,7 +59,7 @@ func TestNewClusterSSHCmd(t *testing.T) {
 	assert.NoError(err1)
 	res2, err2 := cluster.Run("echo res2")
 	assert.NoError(err2)
-	assert.EqualValues(len(sshHosts), len(res), "number of results not equal to hosts number")
+	assert.EqualValues(len(sshHosts), len(res), "number of results not equals to hosts number")
 	for i := range res1 {
 		assert.EqualValues("res1\n", res1[i].Res.Stdout.String())
 		assert.EqualValues("res2\n", res2[i].Res.Stdout.String())
