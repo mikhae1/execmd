@@ -1,61 +1,86 @@
 package execmd
 
-import "github.com/pkg/errors"
-
 // ClusterSSHCmd is a wrapper on SSHCmd
 type ClusterSSHCmd struct {
-	SSHCmds []*SSHCmd
+	Cmds []ClusterCmd
 
-	Hosts       []string
-	StartedCmds []ClusterRes
 	StopOnError bool
 }
 
-// ClusterRes contains results of command execution:
-// res - stdout, stderr
-// err - error
+// ClusterCmd wraps SSHCmd and preserves host name and saves error from .start() for .Wait() method
+type ClusterCmd struct {
+	SSHCmd SSHCmd
+
+	Host string
+}
+
+// ClusterRes contains results of command execution
 type ClusterRes struct {
 	Host string
-	Res  CmdRes
 	Err  error
+	Res  CmdRes
 }
 
 // NewClusterSSHCmd inits ClusterSSHCmd with defaults
 func NewClusterSSHCmd(hosts []string) *ClusterSSHCmd {
 	c := ClusterSSHCmd{}
 	c.StopOnError = false
-	c.Hosts = append([]string(nil), hosts...)
-	for _, h := range hosts {
-		c.SSHCmds = append(c.SSHCmds, NewSSHCmd(h))
+	c.Cmds = make([]ClusterCmd, len(hosts))
+	for i, host := range hosts {
+		c.Cmds[i].Host = host
+		c.Cmds[i].SSHCmd = *NewSSHCmd(host)
 	}
 	return &c
 }
 
-// Wait wraps SSHCmd.Wait for array of hosts into c.StartedCmds struct
-func (c *ClusterSSHCmd) Wait() error {
-	// TODO: list errors should be returned, or maybe hostname appended
-	// now you should access `.StartedCmds` to see exact where error occurs
-	var lastError error
-	for i := range c.StartedCmds {
-		// skip errors on Start()
-		if c.StartedCmds[i].Err != nil {
-			continue
+// Loop through the hosts and run .Start() or .Run() method (depend on `parallel` flag)
+func (c *ClusterSSHCmd) start(command string, parallel bool) ([]ClusterRes, error) {
+
+	results := make([]ClusterRes, len(c.Cmds))
+	for i, cmd := range c.Cmds {
+		// reset previous errors
+		// cmd.Err = nil
+
+		results[i].Host = cmd.Host
+
+		// no need to implement interfaces here, we always have only: .Start() and .Run() methods
+		exec := cmd.SSHCmd.Start
+		if !parallel {
+			exec = cmd.SSHCmd.Run
 		}
 
-		c.StartedCmds[i].Err = c.SSHCmds[i].Wait()
-		if c.StartedCmds[i].Err != nil {
-			if c.StopOnError {
-				return c.StartedCmds[i].Err
-			}
+		results[i].Res, results[i].Err = exec(command)
 
-			lastError = c.StartedCmds[i].Err
+		// save errors
+		//cmd.Err = results[i].Err
+		if c.StopOnError && results[i].Err != nil {
+			return results[:i+1], results[i].Err
+		}
+	}
+
+	return results, nil
+}
+
+// Wait calls SSHCmd.Wait for the list of Cmds []ClusterCmd
+// you should access `.Cmds` to see exact where error occurs
+func (c *ClusterSSHCmd) Wait() error {
+	var lastError error
+	for _, cmd := range c.Cmds {
+		// skip commands which emit error on c.start() method
+		// if cmd.Err != nil {
+		// 	continue
+		// }
+
+		lastError = cmd.SSHCmd.Wait()
+		if c.StopOnError && lastError != nil {
+			return lastError
 		}
 	}
 
 	return lastError
 }
 
-// Run executes command in parallel: all commands starts running simultaneously at the hosts
+// Run executes command in parallel and waits for the results. Command starts simultaneously at each of the hosts.
 func (c *ClusterSSHCmd) Run(command string) (results []ClusterRes, err error) {
 	if results, err = c.Start(command); err != nil {
 		return
@@ -63,47 +88,15 @@ func (c *ClusterSSHCmd) Run(command string) (results []ClusterRes, err error) {
 
 	err = c.Wait()
 
-	results = c.StartedCmds
-
 	return
 }
 
-// RunOneByOne runs command in series: run at first host, then run at second, then...
+// RunOneByOne executes command in series: run at first host, then run at second host, then...
 func (c *ClusterSSHCmd) RunOneByOne(command string) (results []ClusterRes, err error) {
 	return c.start(command, false)
 }
 
-// Start runs command in parallel
+// Start executes command in parallel, no wait for the results
 func (c *ClusterSSHCmd) Start(command string) (results []ClusterRes, err error) {
 	return c.start(command, true)
-}
-
-// Loop through hosts and start
-// .Start() or .Run() ssh command depending on `parallel` flag
-func (c *ClusterSSHCmd) start(command string, parallel bool) ([]ClusterRes, error) {
-	if len(c.Hosts) == 0 {
-		return nil, errors.New("no hosts to run cluster command")
-	}
-
-	// reset started on each new start
-	c.StartedCmds = []ClusterRes{}
-	for i, host := range c.Hosts {
-		cres := ClusterRes{}
-		cres.Host = host
-
-		exec := c.SSHCmds[i].Start
-		if !parallel {
-			exec = c.SSHCmds[i].Run
-		}
-
-		cres.Res, cres.Err = exec(command)
-
-		// save results
-		c.StartedCmds = append(c.StartedCmds, cres)
-		if c.StopOnError && cres.Err != nil {
-			return c.StartedCmds, cres.Err
-		}
-	}
-
-	return c.StartedCmds, nil
 }
