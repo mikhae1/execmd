@@ -4,6 +4,13 @@ package execmd
 type ClusterSSHCmd struct {
 	Cmds []ClusterCmd
 
+	Cwd         string
+	Interactive bool
+	SSHBinPath  string
+	Host        string
+	User        string
+	Port        string
+	KeyPath     string
 	StopOnError bool
 }
 
@@ -33,11 +40,19 @@ func NewClusterSSHCmd(hosts []string) *ClusterSSHCmd {
 	return &c
 }
 
-// Loop through the hosts and run .Start() or .Run() method (depend on `parallel` flag)
+// Loops through the hosts and runs .Start() or .Run() method (depends on `parallel` flag)
 func (c *ClusterSSHCmd) start(command string, parallel bool) ([]ClusterRes, error) {
 
 	results := make([]ClusterRes, len(c.Cmds))
 	for i, cmd := range c.Cmds {
+		// set cluster common variables
+		cmd.SSHCmd.Cwd = c.Cwd
+		cmd.SSHCmd.Interactive = c.Interactive
+		cmd.SSHCmd.SSHBinPath = c.SSHBinPath
+		cmd.SSHCmd.User = c.User
+		cmd.SSHCmd.Port = c.Port
+		cmd.SSHCmd.KeyPath = c.KeyPath
+
 		results[i].Host = cmd.Host
 
 		// no need to implement interfaces here, we always have only: .Start() and .Run() methods

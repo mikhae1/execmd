@@ -64,4 +64,12 @@ func TestNewClusterSSHCmd(t *testing.T) {
 		assert.EqualValues("res1\n", res1[i].Res.Stdout.String())
 		assert.EqualValues("res2\n", res2[i].Res.Stdout.String())
 	}
+
+	// check cwd changing
+	cluster.Cwd = "/tmp"
+	res, err = cluster.Run("pwd")
+	assert.NoError(err)
+	for i := range res {
+		assert.EqualValues("/tmp\n", res[i].Res.Stdout.String(), "no working dir change")
+	}
 }

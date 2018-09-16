@@ -20,4 +20,15 @@ func TestNewSSHCmd(t *testing.T) {
 	res, err = srv.Run("i-am-not-exist")
 	assert.Error(err)
 	assert.Contains(res.Stderr.String(), "i-am-not-exist")
+
+	srv.Cwd = "/tmp"
+	res, err = srv.Run("pwd")
+	assert.NoError(err)
+	assert.EqualValues(res.Stdout.String(), "/tmp\n", "no working dir change")
+
+	srv.Cwd = "/i-am-nowhere"
+	res, err = srv.Run("pwd")
+	assert.Error(err)
+	assert.Contains(res.Stderr.String(), "/i-am-nowhere", "no error when nonexisting working dir change")
+
 }
