@@ -25,7 +25,7 @@ type SSHCmd struct {
 	Host        string
 	User        string
 	Port        string
-	Key         string
+	KeyPath     string
 	Cwd         string
 }
 
@@ -50,7 +50,12 @@ func (s *SSHCmd) Wait() error {
 
 // Run wraps Cmd.Run()
 func (s *SSHCmd) Run(command string) (res CmdRes, err error) {
-	return s.Cmd.Run(command)
+	if res, err = s.Start(command); err != nil {
+		return
+	}
+
+	err = s.Wait()
+	return
 }
 
 // Start wraps Cmd.Start() with ssh invocation
@@ -91,8 +96,8 @@ func (s *SSHCmd) warpInSSH(command string) (sshArgs []string) {
 	if s.Port != "" {
 		sshArgs = append(sshArgs, "-p", s.Port)
 	}
-	if s.Key != "" {
-		sshArgs = append(sshArgs, "-i", s.Key)
+	if s.KeyPath != "" {
+		sshArgs = append(sshArgs, "-i", s.KeyPath)
 	}
 	if s.Cwd != "" {
 		command = "cd " + s.Cwd + " && " + command
