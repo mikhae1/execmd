@@ -4,9 +4,6 @@
 	Copyright(c) 2018 mink0
 */
 
-// TODO:
-// User detect from user@host
-
 package execmd
 
 import (
@@ -20,26 +17,37 @@ import (
 type SSHCmd struct {
 	Cmd *Cmd
 
-	Interactive bool
-	SSHBinPath  string
-	Host        string
-	User        string
-	Port        string
-	KeyPath     string
-	Cwd         string
+	Interactive   bool
+	SSHExecutable string
+	Host          string
+	User          string
+	Port          string
+	KeyPath       string
+	Cwd           string
 }
-
-// Path to ssh binary
-// Could be overridden by setting SSH_BIN_PATH env variable
-var sshBinList = []string{os.Getenv("SSH_BIN_PATH"), "ssh"}
 
 // NewSSHCmd initializes SSHCmd with defaults
 func NewSSHCmd(host string) *SSHCmd {
-	ssh := SSHCmd{Host: host}
+	ssh := SSHCmd{
+		Host:          host,
+		SSHExecutable: "ssh",
+	}
 
 	ssh.Cmd = NewCmd()
 	ssh.Cmd.PrefixStdout = color(host) + " "
 	ssh.Cmd.PrefixStderr = color(host) + colorErr("@err ")
+
+	// Path to ssh binary could be overridden by setting `SSH_EXECUTABLE` env variable
+	if sshEnvExec, ok := os.LookupEnv("SSH_EXECUTABLE"); ok {
+		ssh.SSHExecutable = sshEnvExec
+	}
+
+	// User detect from user@host
+	if arr := strings.Split(host, "@"); len(arr) == 2 {
+		ssh.User = arr[0]
+		ssh.Host = arr[1]
+	}
+
 	return &ssh
 }
 
@@ -65,13 +73,6 @@ func (s *SSHCmd) Start(command string) (res CmdRes, err error) {
 		return
 	}
 
-	if s.SSHBinPath == "" {
-		if s.SSHBinPath, err = findPath(sshBinList); err != nil {
-			err = errors.Wrapf(err, "can't find ssh binary: %v", shellPathList)
-			return
-		}
-	}
-
 	sshArgs := s.warpInSSH(command)
 
 	res, err = s.Cmd.Start(strings.Join(sshArgs, " "))
@@ -81,7 +82,7 @@ func (s *SSHCmd) Start(command string) (res CmdRes, err error) {
 
 // transform `command` into ssh-compatible argument string
 func (s *SSHCmd) warpInSSH(command string) (sshArgs []string) {
-	sshArgs = append(sshArgs, s.SSHBinPath)
+	sshArgs = append(sshArgs, s.SSHExecutable)
 
 	hostWithUser := s.Host
 	if s.User != "" {
@@ -90,7 +91,7 @@ func (s *SSHCmd) warpInSSH(command string) (sshArgs []string) {
 
 	sshArgs = append(sshArgs, hostWithUser)
 
-	if strings.Contains(command, "sudo") || s.Interactive {
+	if s.Interactive || strings.Contains(command, "sudo") {
 		sshArgs = append(sshArgs, "-tt")
 	}
 	if s.Port != "" {

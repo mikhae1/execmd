@@ -26,9 +26,9 @@ func TestNewSSHCmd(t *testing.T) {
 	assert.NoError(err)
 	assert.EqualValues(res.Stdout.String(), "/tmp\n", "no working dir change")
 
+	srv = NewSSHCmd(sshHost)
 	srv.Cwd = "/i-am-nowhere"
 	res, err = srv.Run("pwd")
 	assert.Error(err)
 	assert.Contains(res.Stderr.String(), "/i-am-nowhere", "no error when nonexisting working dir change")
-
 }
