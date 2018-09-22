@@ -5,12 +5,6 @@ type ClusterSSHCmd struct {
 	Cmds []ClusterCmd
 
 	Cwd         string
-	Interactive bool
-	SSHBinPath  string
-	Host        string
-	User        string
-	Port        string
-	KeyPath     string
 	StopOnError bool
 }
 
@@ -46,12 +40,9 @@ func (c *ClusterSSHCmd) start(command string, parallel bool) ([]ClusterRes, erro
 	results := make([]ClusterRes, len(c.Cmds))
 	for i, cmd := range c.Cmds {
 		// set cluster common variables
-		cmd.SSHCmd.Cwd = c.Cwd
-		cmd.SSHCmd.Interactive = c.Interactive
-		cmd.SSHCmd.SSHBinPath = c.SSHBinPath
-		cmd.SSHCmd.User = c.User
-		cmd.SSHCmd.Port = c.Port
-		cmd.SSHCmd.KeyPath = c.KeyPath
+		if c.Cwd != "" {
+			cmd.SSHCmd.Cwd = c.Cwd
+		}
 
 		results[i].Host = cmd.Host
 
