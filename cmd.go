@@ -14,11 +14,10 @@ import (
 	"log"
 	"os"
 	"os/exec"
-
-	"github.com/pkg/errors"
 )
 
-// List of system shell binaries
+// Path to system shell binary
+// Could be overridden by setting `SHELL` env variable
 var shellPathList = []string{os.Getenv("SHELL"), "bash", "sh"}
 
 // Cmd is wrapper struct around exec.Cmd
@@ -46,13 +45,20 @@ type CmdRes struct {
 
 // NewCmd initializes Cmd with defaults
 func NewCmd() *Cmd {
-	return &Cmd{
+	cmd := Cmd{
 		RecordStdout: true,
 		RecordStderr: true,
 		PrefixCmd:    "$ ",
 		PrefixStdout: colorOK("> "),
 		PrefixStderr: colorErr("@err "),
 	}
+
+	// try to find shell binary
+	if shellPath, err := findPath(shellPathList); err == nil {
+		cmd.ShellPath = shellPath
+	}
+
+	return &cmd
 }
 
 // Wait is a exec.Wait wrapper with buffer flushes
@@ -77,13 +83,6 @@ func (c *Cmd) Run(command string) (res CmdRes, err error) {
 
 // Start is exec.Start() wrapper with system shell and output buffers initialization
 func (c *Cmd) Start(command string) (res CmdRes, err error) {
-	if c.ShellPath == "" {
-		if c.ShellPath, err = findPath(shellPathList); err != nil {
-			err = errors.Wrapf(err, "can't find shell binary: %v", shellPathList)
-			return
-		}
-	}
-
 	c.Cmd = exec.Command(c.ShellPath, "-c", command)
 
 	// FIXME: rewrite to use raw buffers only when mute == true
