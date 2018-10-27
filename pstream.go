@@ -1,14 +1,19 @@
 package execmd
 
-// main idea taken from logstreamer
-// see: https://github.com/kvz/logstreamer
-
 import (
 	"bytes"
 	"io"
 	"log"
 	"strings"
 )
+
+/*
+	pStream is a writer wrapper which:
+	1. copy input stream to `data` field (if `saveData` = true)
+	2. split input stream into lines and write them to `logger` with `prefix`
+
+	See: https://github.com/kvz/logstreamer
+*/
 
 type pStream struct {
 	Logger   *log.Logger

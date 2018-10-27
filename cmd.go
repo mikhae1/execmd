@@ -25,6 +25,8 @@ var shellPathList = []string{os.Getenv("SHELL"), "bash", "sh"}
 // Mute options turns off console output
 type Cmd struct {
 	ShellPath    string
+	Interactive  bool
+	LoginShell   bool
 	RecordStdout bool
 	RecordStderr bool
 	MuteStdout   bool
@@ -83,7 +85,18 @@ func (c *Cmd) Run(command string) (res CmdRes, err error) {
 
 // Start is exec.Start() wrapper with system shell and output buffers initialization
 func (c *Cmd) Start(command string) (res CmdRes, err error) {
-	c.Cmd = exec.Command(c.ShellPath, "-c", command)
+	args := []string{}
+	if c.Interactive {
+		args = append(args, "-i")
+	}
+
+	if c.LoginShell {
+		args = append(args, "-l")
+	}
+
+	args = append(args, "-c", command)
+
+	c.Cmd = exec.Command(c.ShellPath, args...)
 
 	// FIXME: rewrite to use raw buffers only when mute == true
 	stdoutLogFile := log.New(os.Stdout, "", 0)
@@ -102,7 +115,9 @@ func (c *Cmd) Start(command string) (res CmdRes, err error) {
 	stderrStream := newPStream(stderrLogFile, c.PrefixStderr, c.RecordStderr)
 	c.Cmd.Stderr = stderrStream
 
-	c.Cmd.Stdin = os.Stdin
+	if c.Interactive {
+		c.Cmd.Stdin = os.Stdin
+	}
 
 	if !c.MuteCmd {
 		fmt.Printf("%s%s\n", c.PrefixCmd, colorStrong(command))

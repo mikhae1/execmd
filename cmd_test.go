@@ -7,6 +7,17 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestInteractive(t *testing.T) {
+	assert := assert.New(t)
+
+	cmd := NewCmd()
+	cmd.Interactive = true
+
+	res, err := cmd.Run("echo Hello stdout $USER; echo Hello stderr $USER >&2")
+	assert.NoError(err)
+	assert.EqualValues(res.Stdout.String(), "Hello stdout "+os.Getenv("USER")+"\n")
+}
+
 func TestNewCmd(t *testing.T) {
 	assert := assert.New(t)
 

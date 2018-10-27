@@ -93,6 +93,7 @@ func (s *SSHCmd) warpInSSH(command string) (sshArgs []string) {
 
 	if s.Interactive || strings.Contains(command, "sudo") {
 		sshArgs = append(sshArgs, "-tt")
+		s.Cmd.Interactive = true
 	}
 	if s.Port != "" {
 		sshArgs = append(sshArgs, "-p", s.Port)
