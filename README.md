@@ -4,25 +4,23 @@ Exec-cmd is a Golang library providing a simple interface to shell commands exec
 
 ## Key features
 
-* execute command in system shell, so you could use variables, pipes, redirections
-* execute local and remote shell commands
+* execute command in system shell, so you could use shell variables, pipes, redirections
+* execute shell commands remotely and localy
 * interface is similar to [exec](https://golang.org/pkg/os/exec/)
 * real time `stdout` and `stderr` output with fancy colors and prefixes
 * remote commands execution is implemented by wrapping [OpenSSH](https://www.openssh.com/) SSH client,
   so all your ssh configuration (including ssh agent forwarding) works as expected
-* run remote commands on several hosts (parallel and serial execution supported)
+* run remote commands on several host (for cluster operations): parallel and serial execution is supported
 
 ## Installation
 
-Install the latest version of the library:
+* using go modules:
+
+      go mod vendor
 
 * using `go get`:
 
       go get -u "github.com/mink0/exec-cmd"
-
-* using [golang/dep](https://github.com/golang/dep) tool:
-
-      dep ensure -add "github.com/mink0/exec-cmd"
 
 Include `exec-cmd` in your application:
 
@@ -120,3 +118,14 @@ $ /usr/bin/ssh host-03 'VAR=std; echo "Hello $VAR out"; echo Hello $VAR err >&2'
 host-03@err Hello std err
 host-03 Hello std out
 ```
+
+## Testing
+
+You should enable `SSH` server locally and add your personal ssh key to known_hosts:
+
+    ssh-copy-id 127.0.0.1
+    ssh-copy-id localhost
+
+Then you could run:
+
+    go test
