@@ -1,16 +1,17 @@
-# Exec-cmd
+# execmd
 
-Exec-cmd is a Golang library providing a simple interface to shell commands execution
+`execmd` is a simple Go package providing an interface for shell command execution.
+It wraps [exec](https://golang.org/pkg/os/exec/) to invoke command in a system shell and redirects multiple `stdout`, `stderr` into a single `stdout` using prefixes. It supports both local and remote commands execution, remote commands are implemented by invoking [OpenSSH](https://www.openssh.com/) binary.
 
 ## Key features
 
-* execute command in system shell, so you could use shell variables, pipes, redirections
-* execute shell commands remotely and localy
-* interface is similar to [exec](https://golang.org/pkg/os/exec/)
-* real time `stdout` and `stderr` output with fancy colors and prefixes
-* remote commands execution is implemented by wrapping [OpenSSH](https://www.openssh.com/) SSH client,
-  so all your ssh configuration (including ssh agent forwarding) works as expected
-* run remote commands on several host (for cluster operations): parallel and serial execution is supported
+* local and remote commands execution
+* simple interface similar to [exec](https://golang.org/pkg/os/exec/)
+* shell environment variables, pipes and redirection are supported
+* system ssh configuration is supported (including `ssh-agent` forwarding)
+* you can run single command on multiple hosts (for cluster operations): parallel and serial execution is supported
+* real time `stdout` and `stderr` output with fancy coloring and prefixing
+* output buffers could be captured to access them programmatically
 
 ## Installation
 
@@ -22,13 +23,15 @@ Exec-cmd is a Golang library providing a simple interface to shell commands exec
 
       go get -u "github.com/mink0/exec-cmd"
 
-Include `exec-cmd` in your application:
+Then import `exec-cmd` in your application:
 
 ```go
 import "github.com/mink0/exec-cmd"
 ```
 
-## Local command example
+## Examples
+
+### Local command execution
 
 ```go
 package main
@@ -46,7 +49,7 @@ $ ps aux | grep go
 > mink0         1934   0.0  0.2 558459904  15744   ??  S    11:20AM   0:01.71 /Users/mink0/go/bin/gocode -s -sock unix -addr 127.0.0.1:37373
 ```
 
-## Remote command example
+### Remote command execution
 
 ```go
 package main
@@ -68,7 +71,7 @@ $ /usr/bin/ssh 192.168.1.194 'VAR="$(hostname)"; echo "hello $VAR"'
 saved output: hello host-01.local
 ```
 
-## Remote cluster command example
+### Remote cluster command execution
 
 ```go
 package main
@@ -121,11 +124,13 @@ host-03 Hello std out
 
 ## Testing
 
-You should enable `SSH` server locally and add your personal ssh key to known_hosts:
+You should enable `SSH` server locally and add your personal ssh key to `known_hosts` to avoid password prompting:
 
-    ssh-copy-id 127.0.0.1
-    ssh-copy-id localhost
+```sh
+  ssh-copy-id 127.0.0.1
+  ssh-copy-id localhost
+```
 
-Then you could run:
+Run tests:
 
     go test
