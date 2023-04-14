@@ -1,3 +1,5 @@
+// You should enable `SSH` server locally and add your personal ssh key to `known_hosts` to avoid password prompting
+
 package execmd_test
 
 import (
