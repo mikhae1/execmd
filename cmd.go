@@ -68,8 +68,8 @@ func (c *Cmd) Wait() error {
 		c.CancelFunc()
 	}
 
-	c.Cmd.Stderr.(*pStream).Close()
-	c.Cmd.Stdout.(*pStream).Close()
+	c.Cmd.Stderr.(*prefixedStream).Close()
+	c.Cmd.Stdout.(*prefixedStream).Close()
 	return err
 }
 
@@ -115,10 +115,10 @@ func (c *Cmd) Start(command string, timeout ...time.Duration) (CmdRes, error) {
 		stderrLogFile = log.New(bytes.NewBuffer([]byte("")), "", 0)
 	}
 
-	stdoutStream := newPStream(stdoutLogFile, c.PrefixStdout, c.RecordStdout)
+	stdoutStream := newPrefixedStream(stdoutLogFile, c.PrefixStdout, c.RecordStdout)
 	c.Cmd.Stdout = stdoutStream
 
-	stderrStream := newPStream(stderrLogFile, c.PrefixStderr, c.RecordStderr)
+	stderrStream := newPrefixedStream(stderrLogFile, c.PrefixStderr, c.RecordStderr)
 	c.Cmd.Stderr = stderrStream
 
 	if c.Interactive {
