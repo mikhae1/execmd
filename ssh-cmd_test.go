@@ -1,34 +1,76 @@
-package execmd
+package execmd_test
 
 import (
+	"strings"
 	"testing"
+	"time"
 
-	"github.com/stretchr/testify/assert"
+	execmd "github.com/mink0/exec-cmd.git"
 )
 
-func TestNewSSHCmd(t *testing.T) {
-	assert := assert.New(t)
+const dummyHost = "localhost"
 
-	const sshHost = "localhost"
-
-	srv := NewSSHCmd(sshHost)
+func TestNewSSHCmd_Run(t *testing.T) {
+	srv := execmd.NewSSHCmd(dummyHost)
 	res, err := srv.Run("VAR=world; echo Hello stdout $VAR; echo Hello stderr $VAR >&2")
-	assert.NoError(err)
-	assert.EqualValues("Hello stdout world\n", res.Stdout.String())
-	assert.EqualValues("Hello stderr world\n", res.Stderr.String())
+	if err != nil {
+		t.Error("Expected a timeout error, but got nil")
+	}
+	if res.Stdout.String() != "Hello stdout world\n" {
+		t.Errorf("Expected and actual output do not match")
+	}
+	if res.Stderr.String() != "Hello stderr world\n" {
+		t.Errorf("Expected and actual error output do not match")
+	}
+}
 
-	res, err = srv.Run("i-am-not-exist")
-	assert.Error(err)
-	assert.Contains(res.Stderr.String(), "i-am-not-exist")
+func TestNewSSHCmd_RunWithError(t *testing.T) {
+	srv := execmd.NewSSHCmd(dummyHost)
+	res, err := srv.Run("i-am-not-exist")
+	if err == nil {
+		t.Error("Expected error, but got nil")
+	}
+	if !strings.Contains(res.Stderr.String(), "i-am-not-exist") {
+		t.Error("Expected error message not found")
+	}
+}
 
+func TestNewSSHCmd_RunWithTimeout(t *testing.T) {
+	srv := execmd.NewSSHCmd(dummyHost)
+	res, err := srv.Run("sleep 3; echo OK", 1*time.Second)
+	if err == nil {
+		t.Error("Expected a timeout error, but got nil")
+	}
+
+	res, err = srv.Run("sleep 1; echo OK", 3*time.Second)
+	if err != nil {
+		t.Error("Unexpected a timeout error: %w", err)
+	}
+	if res.Stdout.String() != "OK\n" {
+		t.Errorf("Expected and actual output do not match %s", res.Stdout)
+	}
+}
+
+func TestNewSSHCmd_Cwd(t *testing.T) {
+	srv := execmd.NewSSHCmd(dummyHost)
 	srv.Cwd = "/tmp"
-	res, err = srv.Run("pwd")
-	assert.NoError(err)
-	assert.EqualValues(res.Stdout.String(), "/tmp\n", "no working dir change")
+	res, err := srv.Run("pwd")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Stdout.String() != "/tmp\n" {
+		t.Errorf("no working dir change")
+	}
+}
 
-	srv = NewSSHCmd(sshHost)
+func TestNewSSHCmd_CwdNonExisting(t *testing.T) {
+	srv := execmd.NewSSHCmd(dummyHost)
 	srv.Cwd = "/i-am-nowhere"
-	res, err = srv.Run("pwd")
-	assert.Error(err)
-	assert.Contains(res.Stderr.String(), "/i-am-nowhere", "no error when nonexisting working dir change")
+	res, err := srv.Run("pwd")
+	if err == nil {
+		t.Error("Expected error, but got nil")
+	}
+	if !strings.Contains(res.Stderr.String(), "/i-am-nowhere") {
+		t.Error("no error when nonexisting working dir change")
+	}
 }
