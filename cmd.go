@@ -140,6 +140,7 @@ func (c *Cmd) Start(command string, timeout ...time.Duration) (CmdRes, error) {
 
 // findPath finds first available shell path from a given list of paths.
 func findPath(paths []string) (string, error) {
+	var err error
 	for _, p := range paths {
 		path, err := exec.LookPath(p)
 		if err == nil {
