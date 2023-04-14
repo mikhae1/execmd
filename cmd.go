@@ -5,10 +5,12 @@ package execmd
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"log"
 	"os"
 	"os/exec"
+	"time"
 )
 
 // Default shell paths that can be overridden by setting the `SHELL` environment variable.
@@ -29,6 +31,7 @@ type Cmd struct {
 	PrefixStdout string
 	PrefixStderr string
 	PrefixCmd    string
+	CancelFunc   context.CancelFunc
 
 	Cmd *exec.Cmd
 }
@@ -56,18 +59,23 @@ func NewCmd() *Cmd {
 	return &cmd
 }
 
-// Wait wraps exec.Wait and ensures that the buffers are flushed after waiting.
+// Wait wraps exec.Wait() and ensures that the buffers are flushed after waiting.
 func (c *Cmd) Wait() error {
 	err := c.Cmd.Wait()
+
+	// call the cancel function to always release the resources associated with the context
+	if c.CancelFunc != nil {
+		c.CancelFunc()
+	}
 
 	c.Cmd.Stderr.(*pStream).Close()
 	c.Cmd.Stdout.(*pStream).Close()
 	return err
 }
 
-// Run executes the command and waits for the result.
-func (c *Cmd) Run(command string) (CmdRes, error) {
-	res, err := c.Start(command)
+// Run is exec.Run() wrapper: runs command and blocks until it finishes, with an optional timeout
+func (c *Cmd) Run(command string, timeout ...time.Duration) (CmdRes, error) {
+	res, err := c.Start(command, timeout...)
 	if err != nil {
 		return res, err
 	}
@@ -77,7 +85,7 @@ func (c *Cmd) Run(command string) (CmdRes, error) {
 }
 
 // Start initializes the system shell and output buffers, and starts the command.
-func (c *Cmd) Start(command string) (CmdRes, error) {
+func (c *Cmd) Start(command string, timeout ...time.Duration) (CmdRes, error) {
 	args := []string{}
 	if c.Interactive {
 		args = append(args, "-i")
@@ -89,7 +97,13 @@ func (c *Cmd) Start(command string) (CmdRes, error) {
 
 	args = append(args, "-c", command)
 
-	c.Cmd = exec.Command(c.ShellPath, args...)
+	if len(timeout) > 0 && timeout[0] > 0 {
+		ctx, cancel := context.WithTimeout(context.Background(), timeout[0])
+		c.CancelFunc = cancel
+		c.Cmd = exec.CommandContext(ctx, c.ShellPath, args...)
+	} else {
+		c.Cmd = exec.Command(c.ShellPath, args...)
+	}
 
 	stdoutLogFile := log.New(os.Stdout, "", 0)
 	if c.MuteStdout {
@@ -106,6 +120,7 @@ func (c *Cmd) Start(command string) (CmdRes, error) {
 
 	stderrStream := newPStream(stderrLogFile, c.PrefixStderr, c.RecordStderr)
 	c.Cmd.Stderr = stderrStream
+
 	if c.Interactive {
 		c.Cmd.Stdin = os.Stdin
 	}
@@ -123,14 +138,14 @@ func (c *Cmd) Start(command string) (CmdRes, error) {
 	return res, err
 }
 
-// findPath searches for the available shell path from a given list of paths.
+// findPath finds first available shell path from a given list of paths.
 func findPath(paths []string) (string, error) {
 	for _, p := range paths {
 		path, err := exec.LookPath(p)
 		if err == nil {
-			return path, nil
+			return path, err
 		}
 	}
 
-	return "", fmt.Errorf("no valid shell found in path list")
+	return "", fmt.Errorf("no valid shell found in path list %s: %w", paths, err)
 }

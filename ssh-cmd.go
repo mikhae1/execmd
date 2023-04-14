@@ -1,22 +1,15 @@
-/*
-	Wrapper for Cmd to invoke ssh commands via OpenSSH binary
-
-	Copyright(c) 2018 mink0
-*/
-
 package execmd
 
 import (
+	"fmt"
 	"os"
 	"strings"
-
-	"github.com/pkg/errors"
+	"time"
 )
 
-// SSHCmd is a wrapper on Cmd
+// SSHCmd is a wrapper on Cmd to invoke ssh commands via OpenSSH binary
 type SSHCmd struct {
-	Cmd *Cmd
-
+	Cmd           *Cmd
 	Interactive   bool
 	SSHExecutable string
 	Host          string
@@ -26,9 +19,9 @@ type SSHCmd struct {
 	Cwd           string
 }
 
-// NewSSHCmd initializes SSHCmd with defaults
+// NewSSHCmd initializes SSHCmd with defaults and sets the target host
 func NewSSHCmd(host string) *SSHCmd {
-	ssh := SSHCmd{
+	ssh := &SSHCmd{
 		Host:          host,
 		SSHExecutable: "ssh",
 	}
@@ -48,17 +41,17 @@ func NewSSHCmd(host string) *SSHCmd {
 		ssh.Host = arr[1]
 	}
 
-	return &ssh
+	return ssh
 }
 
-// Wait wraps Cmd.Wait()
+// Wait wraps Cmd.Wait(), waiting for the remote command to complete
 func (s *SSHCmd) Wait() error {
 	return s.Cmd.Wait()
 }
 
-// Run wraps Cmd.Run()
-func (s *SSHCmd) Run(command string) (res CmdRes, err error) {
-	if res, err = s.Start(command); err != nil {
+// Run wraps Cmd.Run(), executing the remote command and waiting for it to complete
+func (s *SSHCmd) Run(command string, timeout ...time.Duration) (res CmdRes, err error) {
+	if res, err = s.Start(command, timeout...); err != nil {
 		return
 	}
 
@@ -66,24 +59,25 @@ func (s *SSHCmd) Run(command string) (res CmdRes, err error) {
 	return
 }
 
-// Start wraps Cmd.Start() with ssh invocation
-func (s *SSHCmd) Start(command string) (res CmdRes, err error) {
+// Start wraps Cmd.Start() with ssh invocation, starting the remote command
+func (s *SSHCmd) Start(command string, timeout ...time.Duration) (res CmdRes, err error) {
 	if s.Host == "" {
-		err = errors.New("no host to run ssh command")
+		err = fmt.Errorf("no host to run ssh command")
 		return
 	}
 
-	sshArgs := s.warpInSSH(command)
+	sshArgs, err := s.warpInSSH(command)
+	if err != nil {
+		return res, fmt.Errorf("failed to prepare ssh command: %w", err)
+	}
 
-	res, err = s.Cmd.Start(strings.Join(sshArgs, " "))
-
+	res, err = s.Cmd.Start(strings.Join(sshArgs, " "), timeout...)
 	return
 }
 
-// transform `command` into ssh-compatible argument string
-func (s *SSHCmd) warpInSSH(command string) (sshArgs []string) {
-	sshArgs = append(sshArgs, s.SSHExecutable)
-
+// warpInSSH takes a command string and returns an ssh-compatible argument slice
+func (s *SSHCmd) warpInSSH(command string) ([]string, error) {
+	sshArgs := []string{s.SSHExecutable}
 	hostWithUser := s.Host
 	if s.User != "" {
 		hostWithUser = s.User + "@" + s.Host
@@ -99,6 +93,9 @@ func (s *SSHCmd) warpInSSH(command string) (sshArgs []string) {
 		sshArgs = append(sshArgs, "-p", s.Port)
 	}
 	if s.KeyPath != "" {
+		if _, err := os.Stat(s.KeyPath); err != nil {
+			return nil, fmt.Errorf("ssh key not found at path %s: %w", s.KeyPath, err)
+		}
 		sshArgs = append(sshArgs, "-i", s.KeyPath)
 	}
 	if s.Cwd != "" {
@@ -107,6 +104,5 @@ func (s *SSHCmd) warpInSSH(command string) (sshArgs []string) {
 
 	// escape single quotes for shell encapsulation
 	sshArgs = append(sshArgs, "'"+strings.Replace(command, "'", "'\\''", -1)+"'")
-
-	return
+	return sshArgs, nil
 }
