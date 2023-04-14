@@ -14,12 +14,12 @@
 
 ## Installation
 
-    go get "github.com/mink0/exec-cmd"
+    go get "github.com/mikhae1/exec-cmd"
 
 Then import `exec-cmd` in your application:
 
 ```go
-import "github.com/mink0/exec-cmd"
+import "github.com/mikhae1/exec-cmd"
 ```
 
 ## Examples
@@ -29,7 +29,7 @@ import "github.com/mink0/exec-cmd"
 ```go
 package main
 
-import "github.com/mink0/exec-cmd"
+import "github.com/mikhae1/exec-cmd"
 
 func main() {
   // run local command in a shell
@@ -42,7 +42,7 @@ func main() {
 ```go
 package main
 
-import "github.com/mink0/exec-cmd"
+import "github.com/mikhae1/exec-cmd"
 
 func main() {
   // run command on a remote host using ssh

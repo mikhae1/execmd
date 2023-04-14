@@ -1,4 +1,4 @@
-module github.com/mink0/exec-cmd.git
+module github.com/mikhae1/execmd.git
 
 go 1.16
 

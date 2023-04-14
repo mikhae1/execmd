@@ -13,6 +13,6 @@ Features
 
 Documentation
 
-	See https://github.com/mink0/exec-cmd/blob/master/README.md for full documentation
+	See https://github.com/mikhae1/exec-cmd/blob/master/README.md for full documentation
 */
 package execmd
