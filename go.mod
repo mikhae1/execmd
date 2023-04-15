@@ -1,4 +1,4 @@
-module github.com/mikhae1/execmd.git
+module github.com/mikhae1/execmd
 
 go 1.16
 
