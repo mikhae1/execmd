@@ -1,25 +1,26 @@
 # execmd
 
-`ExecCmd` is a user-friendly Go package that offers a simplified interface for shell command execution. Built on top of the [exec](https://golang.org/pkg/os/exec/) package, `ExecCmd` enables command invocation in a system shell and combines multiple stdout and stderr into a single stdout with prefixes. It supports both local and remote command execution, with remote commands implemented through the [OpenSSH](https://www.openssh.com/) binary.
+`ExecCmd` is a Go package that offers a simplified interface for shell command execution. Built on top of the [exec](https://golang.org/pkg/os/exec/), `ExecCmd` enables command invocation in a system shell and combines multiple `stdout` and `stderr` into a single `stdout` with prefixes. It supports both local and remote command execution, with remote commands implemented through the [OpenSSH](https://www.openssh.com/) binary.
 
 ## Key features
 
-- Easy way to execute local and remote shell commands
-- Support for shell environment variables, pipes, and redirection
+- Execute commands in the system shell
+- Execute remote shell commands using OpenSSH binary
+- Capture outputs for programmatic access
+- Real-time `stdout` and `stderr` output featuring auto coloring and prefixing
+- Utilize shell variables, pipes, and redirections
 - Compatibility with system SSH configuration (including ssh-agent forwarding)
 - Run commands on multiple remote hosts (ideal for cluster operations) with parallel or serial execution options
-- Real-time `stdout` and `stderr` output featuring auto coloring and prefixing
-- Output buffers can be captured for programmatic access
 - Minimum number of third party dependencies
 
 ## Installation
 
-    go get "github.com/mikhae1/exec-cmd"
+    go get "github.com/mikhae1/execmd"
 
 Then import `exec-cmd` in your application:
 
 ```go
-import "github.com/mikhae1/exec-cmd"
+import "github.com/mikhae1/execmd"
 ```
 
 ## Examples
@@ -29,7 +30,7 @@ import "github.com/mikhae1/exec-cmd"
 ```go
 package main
 
-import "github.com/mikhae1/exec-cmd"
+import "github.com/mikhae1/execmd"
 
 func main() {
   // run local command in a shell
@@ -42,7 +43,7 @@ func main() {
 ```go
 package main
 
-import "github.com/mikhae1/exec-cmd"
+import "github.com/mikhae1/execmd"
 
 func main() {
   // run command on a remote host using ssh
@@ -72,7 +73,6 @@ res, err := cluster.Run(`VAR=std; echo "Hello $VAR out"; echo Hello $VAR err >&2
 
 // execute in serial order
 res, err = cluster.RunOneByOne(`VAR=std; echo "Hello $VAR out"`)
-}
 ```
 
 Parallel execution results:
