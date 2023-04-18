@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	execmd "github.com/mikhae1/execmd.git"
+	execmd "github.com/mikhae1/execmd"
 )
 
 var dummyHosts = []string{"localhost", "127.0.0.1"}

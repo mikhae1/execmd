@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	execmd "github.com/mikhae1/execmd.git"
+	execmd "github.com/mikhae1/execmd"
 )
 
 const dummyHost = "localhost"

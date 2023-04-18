@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	execmd "github.com/mikhae1/execmd.git"
+	execmd "github.com/mikhae1/execmd"
 )
 
 func TestInteractive(t *testing.T) {
